@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+path {
+  fill: #ccc;
+  stroke: #fff;
+  stroke-width: .5px;
+}
+
+path:hover {
+  fill: red;
+}
+
+</style>
+<body>
+<script src="//d3js.org/d3.v3.min.js"></script>
+<script src="//d3js.org/topojson.v1.min.js"></script>
+<script>
+
+    var width = 960,
+        height = 500;
+
+    var path = d3.geo.path();
+
+    var zoom = d3.behavior.zoom()
+        .scaleExtent([1, 8])
+        .on("zoom", zoomed);
+
+    var svg = d3.select("body").append("svg")
+        .attr("width", width)
+        .attr("height", height);
+        // .on("click", zoomed);
+
+    d3.json("https://gist.githubusercontent.com/mbostock/4090846/raw/d534aba169207548a8a3d670c9c2cc719ff05c47/us.json", function(error, topology) {
+        if (error) throw error;
+
+        svg.selectAll("path")
+            .data(topojson.feature(topology, topology.objects.counties).features)
+            .enter().append("path")
+            .attr("d", path);
+    });
+
+    function reset() {
+        svg.transition().duration(750).call(
+        zoom.transform,
+        d3.zoomIdentity,
+        d3.zoomTransform(svg.node()).invert([width / 2, height / 2])
+        );
+    }
+
+    function clicked(d) {
+        const [[x0, y0], [x1, y1]] = path.bounds(d);
+        d3.event.stopPropagation();
+        svg.transition().duration(750).call(
+        zoom.transform,
+        d3.zoomIdentity
+            .translate(width / 2, height / 2)
+            .scale(Math.min(8, 0.9 / Math.max((x1 - x0) / width, (y1 - y0) / height)))
+            .translate(-(x0 + x1) / 2, -(y0 + y1) / 2),
+        d3.mouse(svg.node())
+        );
+    }
+
+    function zoomed() {
+        const {transform} = d3.event;
+        g.attr("transform", transform);
+        g.attr("stroke-width", 1 / transform.k);
+    }
+
+</script>
+</body>
